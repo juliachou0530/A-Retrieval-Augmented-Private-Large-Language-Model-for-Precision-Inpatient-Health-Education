@@ -56,6 +56,7 @@ st.markdown(
     }
     .info-box {
         background: #f8fafc;
+        color: #1f2937;
         border: 1px solid #e5e7eb;
         border-radius: 10px;
         padding: 1rem 1.2rem;
@@ -238,26 +239,67 @@ with st.sidebar:
     else:
         st.warning("找不到 hosp/patients.csv.gz 與 admissions.csv.gz")
 
-st.markdown('<div class="info-box">請輸入病人 Subject ID，或從現有 PDF 清單選擇一份檔案。</div>', unsafe_allow_html=True)
+st.markdown(
+    """
+    <div class="info-box">
+        <strong>使用方式：</strong><br>
+        1. 輸入 Subject ID，再按「依 Subject ID 搜尋」；或<br>
+        2. 從右側清單直接選擇 PDF，選擇後會立即顯示。
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
 query_col, select_col = st.columns([1, 1.3])
 
 with query_col:
-    subject_id = st.text_input("Subject ID", placeholder="例如：123456")
-    search_clicked = st.button("查詢 PDF", type="primary", use_container_width=True)
+    subject_id = st.text_input(
+        "依 Subject ID 搜尋",
+        placeholder="例如：10039708",
+        help="輸入完整 Subject ID 後，按下方按鈕搜尋對應 PDF。",
+    )
+
+    search_clicked = st.button(
+        "依 Subject ID 搜尋",
+        type="primary",
+        use_container_width=True,
+    )
 
 with select_col:
     options = [""] + [p.name for p in pdfs]
-    selected_name = st.selectbox("或選擇現有 PDF", options)
+
+    selected_name = st.selectbox(
+        "或直接選擇現有 PDF（選擇後立即顯示）",
+        options,
+        help="從清單選擇 PDF 後會立即顯示，不需要按左側搜尋按鈕。",
+    )
 
 selected_pdf = None
 
-if search_clicked:
+# 方法一：使用 Subject ID 搜尋
+if search_clicked and subject_id.strip():
     selected_pdf = find_subject_pdf(subject_id)
+
     if selected_pdf is None:
-        st.error("找不到此 Subject ID 對應的 PDF。")
+        st.error(
+            f"找不到 Subject ID「{subject_id.strip()}」對應的 PDF。"
+        )
+    else:
+        st.success(f"已找到：{selected_pdf.name}")
+
+# 如果按了搜尋，但沒有輸入 Subject ID
+elif search_clicked and not subject_id.strip():
+    if selected_name:
+        selected_pdf = PDF_DIR / selected_name
+        st.info("目前顯示右側選擇的 PDF。")
+    else:
+        st.warning("請先輸入 Subject ID，或從右側選擇現有 PDF。")
+
+# 方法二：直接從下拉選單選擇
 elif selected_name:
     selected_pdf = PDF_DIR / selected_name
+
+# 尚未操作時，預設顯示最新的一份 PDF
 elif pdfs:
     selected_pdf = pdfs[0]
 
