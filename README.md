@@ -10,7 +10,7 @@ This project was developed as a prototype for exploring the use of large languag
 
 The deployed Streamlit application is available at:
 
-[Open the Streamlit Application](請替換成你的Streamlit網址)
+[Open the Streamlit Application](https://tmuh-careguide-ai-personalized.streamlit.app/)
 
 > Access to the application may be restricted. Authorized viewers will receive an invitation by email.
 
