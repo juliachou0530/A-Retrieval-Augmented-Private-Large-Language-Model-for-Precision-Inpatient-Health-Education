@@ -5,7 +5,7 @@ import pandas as pd
 import streamlit as st
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
+PROJECT_ROOT = Path(__file__).resolve().parents
 PDF_DIR = PROJECT_ROOT / "output"
 PATIENT_PROFILE_CANDIDATES = [
     PROJECT_ROOT / "input" / "patient_profiles.csv",
