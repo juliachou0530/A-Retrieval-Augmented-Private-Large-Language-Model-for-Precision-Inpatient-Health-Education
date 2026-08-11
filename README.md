@@ -64,8 +64,8 @@ patient-education-system/
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/你的GitHub帳號/你的Repository名稱.git
-cd 你的Repository名稱
+git clone https://github.com/juliachou0530/A-Retrieval-Augmented-Private-Large-Language-Model-for-Precision-Inpatient-Health-Education.git
+cd A-Retrieval-Augmented-Private-Large-Language-Model-for-Precision-Inpatient-Health-Education
 ```
 
 ### 2. Create a virtual environment
