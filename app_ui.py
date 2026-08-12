@@ -6,26 +6,49 @@ import streamlit as st
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent
-PDF_DIR = PROJECT_ROOT / "output"
+# app_ui.py 可能被放在專案根目錄，也可能被放在像 ui_from_nlpllmclass/ 這樣的子資料夾裡，
+# 所以 output / input 兩種常見位置都要嘗試（同層與上一層）。
+DATA_ROOTS = [PROJECT_ROOT, PROJECT_ROOT.parent]
+
+PDF_DIR_CANDIDATES = [root / "output" for root in DATA_ROOTS]
 PATIENT_PROFILE_CANDIDATES = [
-    PROJECT_ROOT / "input" / "patient_profiles.csv",
-    PROJECT_ROOT / "input" / "data" / "mimic-iv-clinical-database" / "patient_profiles.csv",
-    PROJECT_ROOT / "patient_profiles.csv",
-    PROJECT_ROOT / "data" / "mimic-iv-clinical-database" / "patient_profiles.csv",
+    path
+    for root in DATA_ROOTS
+    for path in (
+        root / "input" / "patient_profiles.csv",
+        root / "input" / "data" / "mimic-iv-clinical-database" / "patient_profiles.csv",
+        root / "patient_profiles.csv",
+        root / "data" / "mimic-iv-clinical-database" / "patient_profiles.csv",
+    )
 ]
 MIMIC_HOSP_CANDIDATES = [
-    PROJECT_ROOT / "input" / "hosp",
-    PROJECT_ROOT / "input" / "data" / "mimic-iv-clinical-database-demo-2.2" / "hosp",
-    PROJECT_ROOT / "input" / "data" / "mimic-iv-clinical-database" / "hosp",
-    PROJECT_ROOT / "hosp",
-    PROJECT_ROOT / "data" / "mimic-iv-clinical-database-demo-2.2" / "hosp",
-    PROJECT_ROOT / "data" / "mimic-iv-clinical-database" / "hosp",
+    path
+    for root in DATA_ROOTS
+    for path in (
+        root / "input" / "hosp",
+        root / "input" / "data" / "mimic-iv-clinical-database-demo-2.2" / "hosp",
+        root / "input" / "data" / "mimic-iv-clinical-database" / "hosp",
+        root / "hosp",
+        root / "data" / "mimic-iv-clinical-database-demo-2.2" / "hosp",
+        root / "data" / "mimic-iv-clinical-database" / "hosp",
+    )
+] + [
     Path.home()
     / "Desktop"
     / "mimic-iv-clinical-database-demo-2.2"
     / "mimic-iv-clinical-database-demo-2.2"
     / "hosp",
 ]
+
+
+def resolve_pdf_dir() -> Path:
+    for candidate in PDF_DIR_CANDIDATES:
+        if candidate.exists():
+            return candidate
+    return PDF_DIR_CANDIDATES[0]
+
+
+PDF_DIR = resolve_pdf_dir()
 
 
 st.set_page_config(
