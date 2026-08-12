@@ -5,7 +5,7 @@ import pandas as pd
 import streamlit as st
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents
+PROJECT_ROOT = Path(__file__).resolve().parent
 PDF_DIR = PROJECT_ROOT / "output"
 PATIENT_PROFILE_CANDIDATES = [
     PROJECT_ROOT / "input" / "patient_profiles.csv",
@@ -68,13 +68,7 @@ st.markdown(
         border: 1px solid #e5e7eb;
         border-radius: 8px;
     }
-    .patient-box {
-        background: #f8fafc;
-        border: 1px solid #e5e7eb;
-        border-radius: 10px;
-        padding: 1rem 1.2rem;
-        margin-bottom: 1rem;
-    }
+
     </style>
     """,
     unsafe_allow_html=True,
@@ -170,9 +164,6 @@ def show_patient_summary(subject_id: str):
         selected_row = rows[rows["hadm_id"].astype(str) == selected_hadm].iloc[0]
     hosp_row = get_hosp_row(subject_id)
 
-    st.markdown('<div class="patient-box">', unsafe_allow_html=True)
-    st.markdown("### 病人資料摘要")
-
     metric_cols = st.columns(4)
     with metric_cols[0]:
         st.metric("Subject ID", selected_row.get("subject_id", ""))
@@ -194,9 +185,6 @@ def show_patient_summary(subject_id: str):
         )
         st.markdown("**Prescriptions / Medications：**")
         st.write(medication_text)
-
-    st.markdown("</div>", unsafe_allow_html=True)
-
 
 def show_pdf(pdf_path: Path):
     encoded = base64.b64encode(pdf_path.read_bytes()).decode("utf-8")
@@ -239,87 +227,69 @@ with st.sidebar:
     else:
         st.warning("找不到 hosp/patients.csv.gz 與 admissions.csv.gz")
 
-st.markdown(
-    """
-    <div class="info-box">
-        <strong>使用方式：</strong><br>
-        1. 輸入 Subject ID，再按「依 Subject ID 搜尋」；或<br>
-        2. 從右側清單直接選擇 PDF，選擇後會立即顯示。
-    </div>
-    """,
-    unsafe_allow_html=True,
+st.info(
+    "輸入完整 Subject ID 即可自動搜尋，"
+    "或從右側清單直接選擇 PDF。"
 )
 
 query_col, select_col = st.columns([1, 1.3])
 
 with query_col:
     subject_id = st.text_input(
-        "依 Subject ID 搜尋",
-        placeholder="例如：10039708",
-        help="輸入完整 Subject ID 後，按下方按鈕搜尋對應 PDF。",
-    )
-
-    search_clicked = st.button(
-        "依 Subject ID 搜尋",
-        type="primary",
-        use_container_width=True,
+        "Subject ID",
+        placeholder="例如：10040025",
+        help="輸入完整 Subject ID，系統會自動搜尋對應的 PDF。",
     )
 
 with select_col:
     options = [""] + [p.name for p in pdfs]
 
     selected_name = st.selectbox(
-        "或直接選擇現有 PDF（選擇後立即顯示）",
+        "或選擇現有 PDF",
         options,
-        help="從清單選擇 PDF 後會立即顯示，不需要按左側搜尋按鈕。",
+        help="選擇後會立即顯示。",
     )
 
 selected_pdf = None
 
-# 方法一：使用 Subject ID 搜尋
-if search_clicked and subject_id.strip():
+# 右側下拉選單優先
+if selected_name:
+    candidate = PDF_DIR / selected_name
+
+    if candidate.exists():
+        selected_pdf = candidate
+    else:
+        st.error(f"找不到檔案：{selected_name}")
+
+# 右側沒有選擇時，才依照 Subject ID 搜尋
+elif subject_id.strip():
     selected_pdf = find_subject_pdf(subject_id)
 
     if selected_pdf is None:
         st.error(
             f"找不到 Subject ID「{subject_id.strip()}」對應的 PDF。"
         )
-    else:
-        st.success(f"已找到：{selected_pdf.name}")
 
-# 如果按了搜尋，但沒有輸入 Subject ID
-elif search_clicked and not subject_id.strip():
-    if selected_name:
-        selected_pdf = PDF_DIR / selected_name
-        st.info("目前顯示右側選擇的 PDF。")
-    else:
-        st.warning("請先輸入 Subject ID，或從右側選擇現有 PDF。")
-
-# 方法二：直接從下拉選單選擇
-elif selected_name:
-    selected_pdf = PDF_DIR / selected_name
-
-# 尚未操作時，預設顯示最新的一份 PDF
-elif pdfs:
-    selected_pdf = pdfs[0]
-
+# 顯示已選擇的文件
 if selected_pdf and selected_pdf.exists():
     st.divider()
     st.subheader(selected_pdf.name)
-    st.caption(f"檔案位置：{selected_pdf}")
 
-    selected_subject_id = subject_id.strip() if search_clicked and subject_id.strip() else subject_from_pdf(selected_pdf)
+    selected_subject_id = subject_from_pdf(selected_pdf)
     show_patient_summary(selected_subject_id)
 
-    with open(selected_pdf, "rb") as f:
-        st.download_button(
-            label="下載 PDF 衛教手冊",
-            data=f,
-            file_name=selected_pdf.name,
-            mime="application/pdf",
-            use_container_width=True,
-        )
+    pdf_bytes = selected_pdf.read_bytes()
+
+    st.download_button(
+        label="下載 PDF 衛教手冊",
+        data=pdf_bytes,
+        file_name=selected_pdf.name,
+        mime="application/pdf",
+        use_container_width=True,
+    )
 
     show_pdf(selected_pdf)
+
+# 還沒有選擇文件
 else:
     st.info("目前尚未選擇 PDF。")
